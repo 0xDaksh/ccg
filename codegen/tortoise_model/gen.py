@@ -7,11 +7,10 @@ from .handlers import parsers
 from .utils import colors, graceful_exit, tuple_to_str, validate_text
 
 model_template = colors.yellow + """
-from tortoise.models import Model
-from tortoise import fields
+from tortoise import models, fields
 from tortoise.contrib.pydantic import pydantic_model_creator
 """ + colors.blue + """
-class {model_name}(Model):
+class {model_name}(models.Model):
   id = fields.IntField(pk=True)
 {fields}
   created_at = fields.DatetimeField(auto_now_add=True)
@@ -61,8 +60,8 @@ def parse_gen_str(model_name: str, gen_str: str) -> Tuple[List[str], str]:
                                                    kv.items()))) + "\n"
 
         # left pad each line
-        fields_str = "\n".join(
-            ["  " + x for x in char_fields_str.strip().split("\n")])
+        fields_str += "".join(
+            ["  " + x + "\n" for x in char_fields_str.strip().split("\n")])
 
     return field_names, fields_str
 
@@ -80,8 +79,8 @@ class TortoiseModel(Generator):
                           message='Enter the model gen commands', validate=lambda _, x: x.strip() != '')
         ]
         ans = inquirer.prompt(ques)
-        model_name = ans['model_name']
-        gen_str = ans['field_str']
+        model_name = ans['model_name'].strip()
+        gen_str = ans['field_str'].strip()
 
         field_names, field_content = parse_gen_str(model_name, gen_str)
 

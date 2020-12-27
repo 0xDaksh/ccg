@@ -4,4 +4,4 @@
 
 It currently only supports model generation for [tortoise orm](https://tortoise-orm.readthedocs.io/en/latest/)
 
-![gif for demonstration](https://i.imgur.com/xruc0NK.gif)
+![gif for demonstration](https://i.imgur.com/3wZVL6u.gif)

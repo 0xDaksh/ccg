@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class colors:
@@ -40,7 +40,7 @@ def handle_common_attrs(
     field_arr: List[str],
     kv: Dict[str, Any],
     attr: str,
-    expr: str
+    expr: Optional[str]
 ):
     attr = attr.lower()
     if attr == 'null' or attr == 'unique':
