@@ -4,13 +4,13 @@ import inquirer
 from codegen.generator import Generator
 
 from .handlers import parsers
-from .utils import be, bs, graceful_exit, tuple_to_str, validate_text
+from .utils import colors, graceful_exit, tuple_to_str, validate_text
 
-model_template = """
+model_template = colors.yellow + """
 from tortoise.models import Model
 from tortoise import fields
 from tortoise.contrib.pydantic import pydantic_model_creator
-
+""" + colors.blue + """
 class {model_name}(Model):
   id = fields.IntField(pk=True)
 {fields}
@@ -19,7 +19,7 @@ class {model_name}(Model):
 
   def __str__(self):
     return self.{str_field_name}
-
+""" + colors.green + """
 {model_name}_Pydantic = pydantic_model_creator({model_name}, name='{model_name}')
 {model_name}In_Pydantic = pydantic_model_creator({model_name}, name='{model_name}In', exclude_readonly=True)
 """
@@ -72,7 +72,7 @@ class TortoiseModel(Generator):
 
     def generate(_self) -> str:
         print(
-            f"\n{bs}Fields such as ID, created_at, updated_at are auto generated.{be}\n")
+            f"\n{colors.bs}Fields such as ID, created_at, updated_at are auto generated.{colors.be}\n")
         ques = [
             inquirer.Text('model_name',
                           message='Enter your model name', validate=validate_text),

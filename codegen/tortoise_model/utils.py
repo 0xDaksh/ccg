@@ -2,8 +2,13 @@ import json
 import re
 from typing import Any, Dict, List, Tuple
 
-bs = '\033[1m'
-be = '\033[0;0m'
+
+class colors:
+    bs = '\033[1m'
+    be = '\033[0;0m'
+    yellow = "\u001b[33m"
+    blue = "\u001b[34m"
+    green = "\u001b[32m"
 
 
 def validate_text(_, x: str) -> bool:
@@ -44,5 +49,5 @@ def handle_common_attrs(
         kv['default'] = json.dumps(attr.split("default=")[1])
     else:
         graceful_exit(
-            f"\n{bs}Attribute {attr} was not found for {field_arr[1]} in {field_arr[0]}."
-            f" Use it without quotations!{be}")
+            f"\n{colors.bs}Attribute {attr} was not found for {field_arr[1]} in {field_arr[0]}."
+            f" Use it without quotations!{colors.be}")
