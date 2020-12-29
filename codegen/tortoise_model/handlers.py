@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Any, Dict, List, Tuple
 
 from .utils import graceful_exit, handle_common_attrs, pluralize
@@ -14,9 +15,8 @@ def handle_char(field_arr: List[str]) -> Tuple[str, Dict[str, Any]]:
         kv['length'] = 255
 
     try:
-        attrs = field_arr[3]
-        for attr in attrs.split(","):
-            handle_common_attrs(field_arr, kv, attr, '^default=\w+$')
+        handle_common_attrs(field_arr, kv, field_arr[3], {
+                            'default_expr': '^default=\w+$'})
     except IndexError:
         pass
 
@@ -28,9 +28,8 @@ def handle_int(field_arr: List[str]) -> Tuple[str, Dict[str, Any]]:
     kv = {}
 
     try:
-        attrs = field_arr[2]
-        for attr in attrs.split(","):
-            handle_common_attrs(field_arr, kv, attr, '^default=[\+\-]?\d+$')
+        handle_common_attrs(
+            field_arr, kv, field_arr[2], {'default_expr': '^default=[\+\-]?\d+$'})
     except IndexError:
         pass
 
@@ -42,10 +41,8 @@ def handle_float(field_arr: List[str]) -> Tuple[str, Dict[str, Any]]:
     kv = {}
 
     try:
-        attrs = field_arr[2]
-        for attr in attrs.split(","):
-            handle_common_attrs(field_arr, kv, attr,
-                                '^default=[\+\-]?\d+\.\d+$')
+        handle_common_attrs(field_arr, kv, field_arr[2],
+                            {'default_expr': '^default=[\+\-]?\d+\.\d+$'})
     except IndexError:
         pass
 
@@ -57,10 +54,21 @@ def handle_decimal(field_arr: List[str]) -> Tuple[str, Dict[str, Any]]:
     kv = {}
 
     try:
-        attrs = field_arr[2]
-        for attr in attrs.split(","):
-            handle_common_attrs(field_arr, kv, attr,
-                                '^default=[\+\-]?\d+\.\d+$')
+        handle_common_attrs(field_arr, kv, field_arr[2],
+                            {'default_expr': '^default=[\+\-]?\d+\.\d+$'})
+    except IndexError:
+        pass
+
+    return tpl, kv
+
+
+def handle_bool(field_arr: List[str]) -> Tuple[str, Dict[str, Any]]:
+    tpl = f'{field_arr[0]} = ' + 'fields.BooleanField({})'
+    kv = {}
+
+    try:
+        handle_common_attrs(field_arr, kv, field_arr[2],
+                            {'default_expr': '^default=(True|False)$', 'default_fn': str})
     except IndexError:
         pass
 
@@ -73,10 +81,10 @@ def handle_datetime_field(field_arr: List[str]) -> Tuple[str, Dict[str, Any]]:
 
     try:
         attrs = field_arr[2].lower()
+        custom_attrs = {'auto_now_add': True, 'auto_now': True}
 
-        for attr in attrs.split(","):
-            if attr == 'auto_now_add' or attr == 'auto_now':
-                kv[attr] = True
+        handle_common_attrs(field_arr, kv, field_arr[2], {
+                            'custom_attrs': custom_attrs})
     except IndexError:
         pass
 
@@ -88,9 +96,7 @@ def handle_text_field(field_arr: List[str]) -> Tuple[str, Dict[str, Any]]:
     kv = {}
 
     try:
-        attrs = field_arr[2]
-        for attr in attrs.split(","):
-            handle_common_attrs(field_arr, kv, attr, None)
+        handle_common_attrs(field_arr, kv, field_arr[2], {})
     except IndexError:
         pass
 
@@ -117,9 +123,7 @@ def handle_fk_field(model_name: str, field_arr: List[str]) -> Tuple[str, Dict[st
     kv['related_name'] = json.dumps(pluralize(model_name.lower()))
 
     try:
-        attrs = field_arr[3]
-        for attr in attrs.split(','):
-            handle_common_attrs(field_arr, kv, attr, None)
+        handle_common_attrs(field_arr, kv, field_arr[3], {})
     except IndexError:
         pass
 
@@ -150,9 +154,7 @@ def handle_m2m_field(model_name, field_arr: List[str]) -> Tuple[str, Dict[str, A
     kv['through'] = json.dumps(model_name.lower() + "_" + field_arr[0].lower())
 
     try:
-        attrs = field_arr[3]
-        for attr in attrs.split(','):
-            handle_common_attrs(field_arr, kv, attr, None)
+        handle_common_attrs(field_arr, kv, field_arr[3], {})
     except IndexError:
         pass
 
@@ -168,6 +170,7 @@ parsers = {
     'decimal': handle_decimal,
     'char': handle_char,
     'text': handle_text_field,
+    'bool': handle_bool,
     'datetime': handle_datetime_field,
     'fk': handle_fk_field,
     'm2m': handle_m2m_field

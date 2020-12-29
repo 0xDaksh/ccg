@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 class colors:
@@ -39,15 +39,21 @@ def pluralize(txt: str) -> str:
 def handle_common_attrs(
     field_arr: List[str],
     kv: Dict[str, Any],
-    attr: str,
-    expr: Optional[str]
+    attr_string: str,
+    opts: Dict[str, Any]
 ):
-    attr = attr.lower()
-    if attr == 'null' or attr == 'unique':
-        kv[attr] = True
-    elif expr and re.search(expr, attr):
-        kv['default'] = json.dumps(attr.split("default=")[1])
-    else:
-        graceful_exit(
-            f"\n{colors.bs}Attribute {attr} was not found for {field_arr[1]} in {field_arr[0]}."
-            f" Use it without quotations!{colors.be}")
+    for attr in attr_string.split(","):
+        attr = attr.strip()
+        attr_lower = attr.lower()
+        if attr_lower == 'null' or attr_lower == 'unique':
+            kv[attr_lower] = True
+        elif 'default_expr' in opts and re.search(opts['default_expr'], attr):
+            value = attr.split("=")[1]
+            fn = opts['default_fn'] if 'default_fn' in opts else json.dumps
+            kv['default'] = fn(value)
+        elif 'custom_attrs' in opts and attr_lower in opts['custom_attrs']:
+            kv[attr_lower] = opts['custom_attrs'][attr_lower]
+        else:
+            graceful_exit(
+                f"\n{colors.bs}Attribute {attr} was not found for {field_arr[1]} in {field_arr[0]}."
+                f" Use it without quotations!{colors.be}")

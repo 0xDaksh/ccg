@@ -17,7 +17,7 @@ class {model_name}(models.Model):
   updated_at = fields.DatetimeField(auto_now=True)
 
   def __str__(self):
-    return self.{str_field_name}
+    return {str_field} 
 """ + colors.green + """
 {model_name}_Pydantic = pydantic_model_creator({model_name}, name='{model_name}')
 {model_name}In_Pydantic = pydantic_model_creator({model_name}, name='{model_name}In', exclude_readonly=True)
@@ -26,13 +26,12 @@ class {model_name}(models.Model):
 
 def parse_gen_str(model_name: str, gen_str: str) -> Tuple[List[str], str]:
     fields_str = ''
-    field_names = []
+    field_data = []
     fields = gen_str.split(" ")
 
     for field in fields:
         values = field.split(":")
         field_name = values[0]
-        field_names.append(field_name)
 
         if not field_name.isidentifier():
             graceful_exit(f'Field name {field_name} is invalid!')
@@ -45,6 +44,8 @@ def parse_gen_str(model_name: str, gen_str: str) -> Tuple[List[str], str]:
         if field_type not in parsers:
             graceful_exit(
                 f"{field_name}'s field type of {field_type} does not exist!")
+
+        field_data.append((field_name, field_type))
 
         if field_type in ('fk', 'm2m'):
             model_name_parsed = model_name
@@ -63,7 +64,7 @@ def parse_gen_str(model_name: str, gen_str: str) -> Tuple[List[str], str]:
         fields_str += "".join(
             ["  " + x + "\n" for x in char_fields_str.strip().split("\n")])
 
-    return field_names, fields_str
+    return field_data, fields_str
 
 
 class TortoiseModel(Generator):
@@ -82,18 +83,24 @@ class TortoiseModel(Generator):
         model_name = ans['model_name'].strip()
         gen_str = ans['field_str'].strip()
 
-        field_names, field_content = parse_gen_str(model_name, gen_str)
+        field_data, field_content = parse_gen_str(model_name, gen_str)
 
-        obj = inquirer.prompt(
-            [inquirer.List(
-                name="str_field_name",
-                message="Choose the field to be used in __str__ method",
-                choices=field_names
-            )]
-        )
+        available_fields = list(
+            filter(lambda x: x[1] in ('char', 'text'), field_data))
+
+        if available_fields:
+            obj = inquirer.prompt(
+                [inquirer.List(
+                    name="str_field",
+                    message="Choose the field to be used in __str__ method",
+                    choices=[x[0] for x in available_fields])]
+            )
+            obj['str_field'] = "self." + obj['str_field']
+        else:
+            obj = {'str_field': 'str(self.id)'}
 
         generated = model_template.format(
-            model_name=model_name, fields=field_content, str_field_name=obj['str_field_name'])
+            model_name=model_name, fields=field_content, str_field=obj['str_field'])
 
         print("✨ Sucessfully Generated:")
         return generated
